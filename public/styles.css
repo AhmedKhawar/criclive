@@ -104,7 +104,7 @@ button { font-family: inherit; }
 
 /* ================================================================ layout + type */
 
-main { padding-top: 26px; padding-bottom: 40px; min-height: 60vh; }
+main.wrap { padding-top: 28px; padding-bottom: 40px; min-height: 60vh; }
 .grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 28px; align-items: start; }
 .grid > * { min-width: 0; }
 
@@ -356,7 +356,7 @@ details[open] > summary::before { content: '− '; }
   .tick { width: 215px; padding: 9px 14px; }
   .tick:first-child { padding-left: 14px; }
 
-  main { padding-top: 18px; }
+  main.wrap { padding-top: 20px; }
   h1 { font-size: 26px; }
   h2 { font-size: 19px; margin-top: 26px; }
   .card { padding: 14px; border-radius: 12px; }
