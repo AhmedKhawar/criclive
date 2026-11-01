@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CricLive — International Cricket</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏏</text></svg>" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a href="#/" class="brand"><span class="brand-ball"></span>CricLive</a>
+      <nav class="nav" id="nav">
+        <a href="#/" data-nav="home">Live Scores</a>
+        <a href="#/schedule" data-nav="schedule">Schedule</a>
+        <a href="#/results" data-nav="results">Results</a>
+        <a href="#/series" data-nav="series">Series</a>
+        <a href="#/teams" data-nav="teams">Teams</a>
+        <a href="#/news" data-nav="news">News</a>
+      </nav>
+      <button class="theme-btn" id="themeBtn" title="Toggle dark mode" aria-label="Toggle dark mode">◐</button>
+    </div>
+  </header>
+
+  <div class="ticker" id="ticker"><div class="wrap ticker-inner" id="tickerInner"></div></div>
+
+  <main class="wrap" id="app"><div class="loading">Loading…</div></main>
+
+  <footer class="footer wrap">
+    Men's international cricket (Tests, ODIs, T20Is). Data from ESPN / ESPNcricinfo's public sports API. Personal, non-commercial use.
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
