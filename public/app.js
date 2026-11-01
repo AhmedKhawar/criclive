@@ -53,6 +53,17 @@ function ballClass(chip) {
 }
 const ballHTML = (c) => `<span class="ball ${ballClass(c)}">${esc(c)}</span>`;
 
+// "92/2 (9.5/20 ov, target 192)" -> main "92/2", detail "9.5/20 ov, target 192"
+function splitScore(s) {
+  const str = String(s || '');
+  const i = str.indexOf(' (');
+  return i < 0 ? { main: str, detail: '' } : { main: str.slice(0, i), detail: str.slice(i + 2).replace(/\)$/, '') };
+}
+function scoreHTML(s) {
+  const { main, detail } = splitScore(s);
+  return `<b>${esc(main)}</b>${detail ? `<small>${esc(detail)}</small>` : ''}`;
+}
+
 // Format filter (All / Test / ODI / T20I), remembered between visits.
 let formatFilter = localStorage.getItem('fmt') || 'All';
 const FORMATS = ['All', 'Test', 'ODI', 'T20I'];
@@ -92,9 +103,10 @@ function matchCard(m) {
       : m.summary || m.statusText || '';
   const anyWinner = m.teams.some((t) => t.winner);
   return `
-  <a class="mcard" href="${matchHref(m)}">
+  <a class="mcard ${m.state === 'in' ? 'is-live' : ''}" href="${matchHref(m)}">
     <div class="top">
-      <span class="t">${statusBadge(m)} <span class="badge fmt">${esc(m.format)}</span> ${esc(m.title)} · ${esc(m.seriesShort || m.series)}</span>
+      ${statusBadge(m)} <span class="badge fmt">${esc(m.format)}</span>
+      <span class="t">${esc(m.title)} · ${esc(m.seriesShort || m.series)}</span>
     </div>
     ${m.teams
       .map(
@@ -102,12 +114,12 @@ function matchCard(m) {
       <div class="team-row ${anyWinner && !t.winner ? 'dim' : ''} ${m.state === 'in' && m.battingTeamId === t.id ? 'batting' : ''}">
         ${t.logo ? `<img src="${esc(t.logo)}" alt="" loading="lazy">` : ''}
         <span class="nm">${esc(t.name)}</span>
-        <span class="sc">${esc(t.score)}</span>
+        <span class="sc">${scoreHTML(t.score)}</span>
       </div>`
       )
       .join('')}
     <div class="status ${statusCls}">${esc(status)}</div>
-    <div class="muted small" style="margin-top:4px">${esc(m.venue || '')}</div>
+    <div class="venue">${esc(m.venue || '')}</div>
   </a>`;
 }
 
@@ -120,8 +132,8 @@ function matchRow(m) {
       <div class="sub"><span class="badge fmt">${esc(m.format)}</span> ${esc(m.title)} · ${esc(m.series)} · ${esc(m.venue || '')}</div>
       ${
         m.state !== 'pre'
-          ? `<div class="sub" style="color:var(--text)">${m.teams.map((t) => `${esc(t.abbr)} ${esc(t.score || '-')}`).join(' &nbsp;·&nbsp; ')}</div>
-             <div class="sub" style="color:${m.state === 'post' ? 'var(--win)' : 'var(--brand)'};font-weight:600">${esc(m.summary || '')}</div>`
+          ? `<div class="sub sc">${m.teams.map((t) => `${esc(t.abbr)} ${esc(splitScore(t.score).main || '-')}`).join(' &nbsp;·&nbsp; ')}</div>
+             <div class="sub st" style="color:${m.state === 'post' ? 'var(--win)' : 'var(--ball)'}">${esc(m.summary || '')}</div>`
           : ''
       }
     </div>
@@ -176,7 +188,12 @@ async function refreshTicker() {
             (m) => `
       <a class="tick" href="${matchHref(m)}">
         <div class="meta">${m.state === 'in' ? '<span class="badge live">Live</span> ' : ''}${esc(m.format)} · ${esc(m.title)} · ${esc(m.seriesShort || '')}</div>
-        ${m.teams.map((t) => `<div class="row"><span>${esc(t.abbr)}</span><span class="sc">${esc(t.score)}</span></div>`).join('')}
+        ${m.teams
+          .map((t) => {
+            const { main, detail } = splitScore(t.score);
+            return `<div class="row"><span>${esc(t.abbr)}</span><span class="sc">${esc(main)}${detail ? `<small>${esc(detail.split(',')[0])}</small>` : ''}</span></div>`;
+          })
+          .join('')}
         <div class="status">${esc(m.state === 'pre' ? `${fmtShortDate(m.date)}, ${fmtTime(m.date)}` : m.summary || '')}</div>
       </a>`
           )
@@ -253,7 +270,7 @@ async function pageSchedule(token, mode) {
     }
     app.innerHTML = `
       <h1>${mode === 'results' ? 'Results' : 'Schedule & Live'}</h1>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start">
+      <div class="toolbar">
         ${formatChips(render)}
         <input class="search" id="q" placeholder="Filter by team, series, venue…" value="${esc(q)}">
       </div>
@@ -469,17 +486,18 @@ function scorecardInnings(inn) {
   <div class="card flush">
     <div class="inn-head">
       <span>${esc(inn.team.name)} — Innings ${inn.number}${inn.followOn ? ' (f/o)' : ''} ${inn.live ? '<span class="badge live">Live</span>' : ''}</span>
-      <span class="sc">${esc(inn.score.split(' (')[0])} <span style="font-weight:500;font-size:13px">(${esc(inn.overs)} ov${inn.runRate ? `, RR ${esc(inn.runRate)}` : ''})</span></span>
+      <span class="sc">${esc(inn.score.split(' (')[0])} <span style="font-weight:500;font-size:12px">(${esc(inn.overs)} ov)</span></span>
     </div>
     <div class="tbl-scroll"><table>
-      <tr><th>Batter</th><th style="text-align:left"></th><th>R</th><th>B</th><th>M</th><th>4s</th><th>6s</th><th>SR</th></tr>
+      <tr><th>Batter</th><th class="dis"></th><th>R</th><th>B</th><th class="hide-sm">M</th><th>4s</th><th>6s</th><th>SR</th></tr>
       ${inn.batting
         .map(
           (b) => `
         <tr class="${inn.live && b.active ? 'active-row' : ''}">
-          <td class="name">${playerLink(b.id, b.name)}${b.captain ? '<span class="tag">(c)</span>' : ''}${b.keeper ? '<span class="tag">†</span>' : ''}${inn.live && b.active === 'striker' ? ' *' : ''}</td>
+          <td class="name">${playerLink(b.id, b.name)}${b.captain ? '<span class="tag">(c)</span>' : ''}${b.keeper ? '<span class="tag">†</span>' : ''}${inn.live && b.active === 'striker' ? ' *' : ''}
+            <span class="dis-m">${esc(b.dismissal)}</span></td>
           <td class="dis">${esc(b.dismissal)}</td>
-          <td class="b">${esc(b.runs)}</td><td>${esc(b.balls)}</td><td>${esc(b.minutes || '-')}</td>
+          <td class="b">${esc(b.runs)}</td><td>${esc(b.balls)}</td><td class="hide-sm">${esc(b.minutes || '-')}</td>
           <td>${esc(b.fours)}</td><td>${esc(b.sixes)}</td><td>${esc(b.sr)}</td>
         </tr>`
         )
@@ -491,13 +509,13 @@ function scorecardInnings(inn) {
     ${inn.yetToBat.length ? `<div class="inn-foot"><span class="muted">${inn.live ? 'Yet to bat' : 'Did not bat'}:</span> ${inn.yetToBat.map((p) => playerLink(p.id, p.name)).join(', ')}</div>` : ''}
     ${inn.fow.length ? `<div class="fow"><b style="color:var(--text)">Fall of wickets:</b> ${inn.fow.map((f) => `${f.wicket}-${f.runs} (${esc(f.player)}${f.over ? `, ${f.over} ov` : ''})`).join(', ')}</div>` : ''}
     <div class="tbl-scroll"><table>
-      <tr><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>Econ</th><th>0s</th><th>4s</th><th>6s</th><th>WD</th><th>NB</th></tr>
+      <tr><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>Econ</th><th class="hide-sm">0s</th><th class="hide-sm">4s</th><th class="hide-sm">6s</th><th class="hide-sm">WD</th><th class="hide-sm">NB</th></tr>
       ${inn.bowling
         .map(
           (b) => `
         <tr><td class="name">${playerLink(b.id, b.name)}</td><td>${esc(b.overs)}</td><td>${esc(b.maidens)}</td><td>${esc(b.runs)}</td>
-        <td class="b">${esc(b.wickets)}</td><td>${esc(b.econ)}</td><td>${esc(b.dots)}</td><td>${esc(b.fours)}</td><td>${esc(b.sixes)}</td>
-        <td>${esc(b.wides)}</td><td>${esc(b.noballs)}</td></tr>`
+        <td class="b">${esc(b.wickets)}</td><td>${esc(b.econ)}</td><td class="hide-sm">${esc(b.dots)}</td><td class="hide-sm">${esc(b.fours)}</td><td class="hide-sm">${esc(b.sixes)}</td>
+        <td class="hide-sm">${esc(b.wides)}</td><td class="hide-sm">${esc(b.noballs)}</td></tr>`
         )
         .join('')}
     </table></div>
@@ -586,7 +604,7 @@ async function pageMatch(token, leagueId, id, initialTab) {
         <div class="mteam ${anyWinner && !t.winner ? 'dim' : ''}">
           ${t.logo ? `<img src="${esc(t.logo)}" alt="">` : ''}
           <a class="nm" href="#/team/${t.id}">${esc(t.name)}${m.state === 'in' && m.battingTeamId === t.id ? ' <span class="badge live" style="vertical-align:middle">Batting</span>' : ''}</a>
-          <span class="sc">${esc(t.score)}</span>
+          <span class="sc">${scoreHTML(t.score)}</span>
         </div>`
         )
         .join('')}
