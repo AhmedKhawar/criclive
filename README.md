@@ -23,7 +23,7 @@ Then open http://localhost:3000. Requires Node 18+. There are no packages to ins
 
 ## Data source
 
-Data comes from ESPN's public sports API (`site.web.api.espn.com`). ESPN owns ESPNcricinfo, and this API serves the same match data. Cricinfo's own API blocks automated requests, so it isn't used. The server (`server.js`) fetches, caches and simplifies the data. The frontend is in `public/`.
+Data comes from ESPN's public sports API (`site.web.api.espn.com`). ESPN owns ESPNcricinfo, and this API serves the same match data. Cricinfo's own API blocks automated requests, so it isn't used. The server code (`lib/cricket.js`, started locally by `dev.js`) fetches, caches and simplifies the data. The frontend is in `public/`.
 
 ## Limitations
 

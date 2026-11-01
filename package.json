@@ -2,9 +2,9 @@
   "name": "criclive",
   "version": "1.0.0",
   "description": "Personal international men's cricket tracker",
-  "main": "server.js",
+  "main": "dev.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node dev.js"
   },
   "engines": { "node": ">=18" }
 }
